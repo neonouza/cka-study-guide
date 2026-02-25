@@ -1,83 +1,55 @@
 # CKA Lab Exercises
 
-This document contains hands-on lab exercises for practicing Kubernetes skills. Each exercise includes step-by-step instructions for deploying applications, configuring RBAC, setting up networking, storage management, and troubleshooting.
-
-## 1. Deploying Applications
-### Exercise 1.1: Deploy a NGINX Application
-1. Create a deployment:
+## Cluster Setup
+1. Install Kubernetes using your preferred method (e.g., kubeadm, minikube).
+2. Verify the installation:
    ```bash
-   kubectl create deployment nginx --image=nginx
-   ```
-2. Expose the deployment:
-   ```bash
-   kubectl expose deployment nginx --port=80 --type=LoadBalancer
-   ```
-3. Verify the deployment:
-   ```bash
-   kubectl get deployments
+   kubectl get nodes
    ```
 
-## 2. Configuring RBAC
-### Exercise 2.1: Create a Role and RoleBinding
-1. Create a role:
+## RBAC Configuration
+1. Create a new namespace for testing RBAC:
+   ```bash
+   kubectl create namespace rbac-test
+   ```
+2. Create a role that allows access to pod resources:
    ```yaml
    apiVersion: rbac.authorization.k8s.io/v1
    kind: Role
    metadata:
-     namespace: default
-     name: pod-reader
+     namespace: rbac-test
+     name: pod-access
    rules:
-   - apiGroups: [""]  # core API group
+   - apiGroups: ["*"]
      resources: ["pods"]
      verbs: ["get", "list"]
    ```
-2. Apply the role:
-   ```bash
-   kubectl apply -f role.yaml
-   ```
-3. Create a RoleBinding:
+3. Bind the role to a user:
    ```yaml
    apiVersion: rbac.authorization.k8s.io/v1
    kind: RoleBinding
    metadata:
-     name: read-pods-binding
-     namespace: default
+     name: pod-access-binding
+     namespace: rbac-test
    subjects:
    - kind: User
-     name: example-user # Replace with actual user
+     name: myuser
      apiGroup: rbac.authorization.k8s.io
    roleRef:
      kind: Role
-     name: pod-reader
+     name: pod-access
      apiGroup: rbac.authorization.k8s.io
    ```
-4. Apply the RoleBinding:
+
+## Networking Setup
+1. Install a CNI plugin (e.g., Calico, Flannel).
+2. Verify network connectivity between pods:
    ```bash
-   kubectl apply -f rolebinding.yaml
+   kubectl exec -it <pod-name> -- ping <another-pod-ip>
    ```
 
-## 3. Setting Up Networking
-### Exercise 3.1: Configure a NetworkPolicy
-1. Create a NetworkPolicy:
-   ```yaml
-   apiVersion: networking.k8s.io/v1
-   kind: NetworkPolicy
-   metadata:
-     name: deny-all
-     namespace: default
-   spec:
-     podSelector: {}
-     policyTypes:
-     - Ingress
-   ```
-2. Apply the NetworkPolicy:
-   ```bash
-   kubectl apply -f networkpolicy.yaml
-   ```
-
-## 4. Storage Management
-### Exercise 4.1: Create a Persistent Volume
-1. Create a Persistent Volume (PV):
+## Storage Configuration
+1. Set up a persistent volume (PV) and a persistent volume claim (PVC):
    ```yaml
    apiVersion: v1
    kind: PersistentVolume
@@ -85,32 +57,36 @@ This document contains hands-on lab exercises for practicing Kubernetes skills. 
      name: my-pv
    spec:
      capacity:
-       storage: 10Gi
+       storage: 5Gi
      accessModes:
        - ReadWriteOnce
      hostPath:
        path: /mnt/data
    ```
-2. Apply the PV:
-   ```bash
-   kubectl apply -f pv.yaml
+2. Create a PVC:
+   ```yaml
+   apiVersion: v1
+   kind: PersistentVolumeClaim
+   metadata:
+     name: my-pvc
+   spec:
+     accessModes:
+       - ReadWriteOnce
+     resources:
+       requests:
+         storage: 5Gi
    ```
 
-## 5. Troubleshooting
-### Exercise 5.1: Troubleshoot a Pod
-1. Describe the pod:
+## Troubleshooting Labs
+1. Use `kubectl describe` to inspect a pod.
    ```bash
    kubectl describe pod <pod-name>
    ```
-2. Check the logs:
+2. Check pod logs:
    ```bash
    kubectl logs <pod-name>
    ```
-3. Check the events:
-   ```bash
-   kubectl get events
-   ```
 
----
-
-This document is intended to be a comprehensive guide for CKA exam preparation. Feel free to add more exercises and expand on these topics.  
+## Security Labs
+1. Implement network policies to restrict traffic.
+2. Use Pod Security Policies (PSP) to enforce security standards.
